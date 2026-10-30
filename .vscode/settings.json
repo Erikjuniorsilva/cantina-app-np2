@@ -1,0 +1,14 @@
+{
+  "files.exclude": {
+    "**/.dart_tool": true,
+    "**/.idea": true,
+    "**/build": true,
+    "**/*.iml": true,
+    ".flutter-plugins-dependencies": true,
+    ".metadata": true,
+    "pubspec.lock": true,
+    ".gitignore": true,
+    "analysis_options.yaml": true,
+    ".vscode": true
+  }
+}
