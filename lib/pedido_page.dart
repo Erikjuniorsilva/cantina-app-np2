@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'cores.dart';
 import 'package:http/http.dart' as http;
 
 // Aula 08: enums com as opções dos Radios
-enum Tamanho { pequeno, medio, grande }
+enum Acucar { comAcucar, adocante, semAcucar }
 
 enum Recebimento { retirar, entregar }
 
@@ -32,17 +33,14 @@ class PedidoPageState extends State<PedidoPage> {
 
   // Aula 08: valores dos Radios e do Checkbox
   Recebimento recebimento = Recebimento.retirar;
-  Tamanho tamanho = Tamanho.medio;
-  bool queijoExtra = false;
+  Acucar acucar = Acucar.comAcucar;
+  bool paraViagem = false;
 
   // Aula 06: o total é recalculado sempre que a tela atualiza (setState)
   double calcularTotal() {
     double total = widget.preco;
-    if (tamanho == Tamanho.grande) {
-      total = total + 4;
-    }
-    if (queijoExtra) {
-      total = total + 3;
+    if (paraViagem) {
+      total = total + 1; // embalagem para viagem
     }
     return total;
   }
@@ -76,8 +74,8 @@ class PedidoPageState extends State<PedidoPage> {
     await FirebaseFirestore.instance.collection('pedidos').add({
       'cliente': clienteController.text,
       'produto': widget.nome,
-      'tamanho': tamanho.name,
-      'queijoExtra': queijoExtra,
+      'acucar': acucar.name,
+      'paraViagem': paraViagem,
       'total': calcularTotal(),
       'recebimento': recebimento.name,
       'onde': onde,
@@ -92,7 +90,7 @@ class PedidoPageState extends State<PedidoPage> {
       appBar: AppBar(
         title: Text('Pedido: ${widget.nome}'),
         centerTitle: true,
-        backgroundColor: Colors.deepOrange,
+        backgroundColor: corCafe,
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
@@ -180,30 +178,30 @@ class PedidoPageState extends State<PedidoPage> {
 
             // Aula 08: grupo de Radio com enum
             SizedBox(height: 16),
-            Text('Tamanho', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            RadioGroup<Tamanho>(
-              groupValue: tamanho,
+            Text('Açúcar (para bebidas)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            RadioGroup<Acucar>(
+              groupValue: acucar,
               onChanged: (valor) {
                 setState(() {
-                  tamanho = valor!;
+                  acucar = valor!;
                 });
               },
               child: Column(
                 children: [
-                  RadioListTile(value: Tamanho.pequeno, title: Text('Pequeno')),
-                  RadioListTile(value: Tamanho.medio, title: Text('Médio')),
-                  RadioListTile(value: Tamanho.grande, title: Text('Grande (+R\$ 4)')),
+                  RadioListTile(value: Acucar.comAcucar, title: Text('Com açúcar')),
+                  RadioListTile(value: Acucar.adocante, title: Text('Com adoçante')),
+                  RadioListTile(value: Acucar.semAcucar, title: Text('Sem açúcar')),
                 ],
               ),
             ),
 
             // Aula 08: Checkbox
             CheckboxListTile(
-              title: Text('Queijo extra (+R\$ 3)'),
-              value: queijoExtra,
+              title: Text('Para viagem (+R\$ 1)'),
+              value: paraViagem,
               onChanged: (valor) {
                 setState(() {
-                  queijoExtra = valor!;
+                  paraViagem = valor!;
                 });
               },
             ),
@@ -211,7 +209,7 @@ class PedidoPageState extends State<PedidoPage> {
             // Aula 06: total muda na tela com o setState
             Text(
               'Total: R\$ ${calcularTotal().toStringAsFixed(2)}',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.deepOrange),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: corCafe),
             ),
             SizedBox(height: 12),
             ElevatedButton(

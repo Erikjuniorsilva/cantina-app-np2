@@ -1,11 +1,11 @@
 {
-    "name": "Cantina da Faculdade",
-    "short_name": "Cantina",
+    "name": "Cafeteria Tem Café",
+    "short_name": "Tem Café",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#FF5722",
-    "theme_color": "#FF5722",
-    "description": "Cantina da Faculdade",
+    "background_color": "#4E342E",
+    "theme_color": "#4E342E",
+    "description": "Cafeteria Tem Café",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

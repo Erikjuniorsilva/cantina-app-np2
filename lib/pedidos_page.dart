@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'cores.dart';
 
 // TELA 3 - LISTA DE PEDIDOS EM TEMPO REAL (Aula 09)
 class PedidosPage extends StatelessWidget {
@@ -9,7 +10,7 @@ class PedidosPage extends StatelessWidget {
       appBar: AppBar(
         title: Text('Pedidos'),
         centerTitle: true,
-        backgroundColor: Colors.deepOrange,
+        backgroundColor: corCafe,
         foregroundColor: Colors.white,
       ),
       // StreamBuilder redesenha a lista sempre que o Firestore muda
@@ -34,8 +35,8 @@ class PedidosPage extends StatelessWidget {
             itemBuilder: (context, i) {
               var pedido = pedidos[i].data();
               return ListTile(
-                leading: Icon(Icons.fastfood, color: Colors.deepOrange),
-                title: Text('${pedido['produto']} (${pedido['tamanho']})'),
+                leading: Icon(Icons.local_cafe, color: corCafe),
+                title: Text('${pedido['produto']} (${pedido['acucar']})'),
                 subtitle: Text('${pedido['cliente']} - ${pedido['onde']}'),
                 trailing: Text('R\$ ${pedido['total'].toStringAsFixed(2)}'),
               );

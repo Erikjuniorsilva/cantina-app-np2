@@ -1,16 +1,16 @@
 import 'package:firebase_core/firebase_core.dart';
 
-// Copie os valores do firebaseConfig do console do Firebase (aula 09):
+// Configurações do projeto tem-cafe-np2 (console do Firebase):
 // Configurações do projeto > Seus apps > app web </>
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     return const FirebaseOptions(
-      apiKey: "COLE-AQUI-O-SEU-apiKey",
-      authDomain: "COLE-AQUI-O-SEU-authDomain",
-      projectId: "COLE-AQUI-O-SEU-projectId",
-      storageBucket: "COLE-AQUI-O-SEU-storageBucket",
-      messagingSenderId: "COLE-AQUI-O-SEU-messagingSenderId",
-      appId: "COLE-AQUI-O-SEU-appId",
+      apiKey: "AIzaSyCbfb_Rvd77Yn7D8wDyC79Un8jRdlDW6HU",
+      authDomain: "tem-cafe-np2.firebaseapp.com",
+      projectId: "tem-cafe-np2",
+      storageBucket: "tem-cafe-np2.firebasestorage.app",
+      messagingSenderId: "144076719150",
+      appId: "1:144076719150:web:7b5ef548563e76f6788bbf",
     );
   }
 }
