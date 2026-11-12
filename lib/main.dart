@@ -29,6 +29,19 @@ class MainApp extends StatelessWidget {
           ),
         ),
       ),
+      // No PC a tela é larga demais: o app fica centralizado com
+      // largura máxima de 480 (tamanho de celular) e fundo marrom nas laterais
+      builder: (context, tela) {
+        return Container(
+          color: corCafe,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 480),
+              child: tela,
+            ),
+          ),
+        );
+      },
       home: HomePage(),
     );
   }

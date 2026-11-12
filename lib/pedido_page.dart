@@ -1,220 +1,214 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'cores.dart';
-import 'package:http/http.dart' as http;
+import 'sacola_page.dart';
 
-// Aula 08: enums com as opções dos Radios
+// Aula 08: enum com as opções do Radio
 enum Acucar { comAcucar, adocante, semAcucar }
 
-enum Recebimento { retirar, entregar }
-
-// TELA 2 - FORMULÁRIO DO PEDIDO
+// TELA 2 - ESCOLHER O ITEM (quantidade, açúcar, observação)
 class PedidoPage extends StatefulWidget {
   // Aula 05: dados recebidos da tela do cardápio
   String nome;
   double preco;
   String url;
+  bool bebida; // salgado não tem opção de açúcar
 
-  PedidoPage(this.nome, this.preco, this.url);
+  PedidoPage(this.nome, this.preco, this.url, this.bebida);
 
   @override
   State<PedidoPage> createState() => PedidoPageState();
 }
 
 class PedidoPageState extends State<PedidoPage> {
-  // Aula 07: um controller para cada TextField
-  TextEditingController clienteController = TextEditingController(text: 'Aluno Teste');
-  TextEditingController horarioController = TextEditingController(text: '10:30');
-  TextEditingController cepController = TextEditingController();
-  TextEditingController ruaController = TextEditingController();
-  TextEditingController bairroController = TextEditingController();
-  TextEditingController cidadeController = TextEditingController();
+  // Aula 07: controller do TextField
+  TextEditingController observacaoController = TextEditingController();
 
-  // Aula 08: valores dos Radios e do Checkbox
-  Recebimento recebimento = Recebimento.retirar;
+  // Aula 08: valor do Radio
   Acucar acucar = Acucar.comAcucar;
-  bool paraViagem = false;
 
-  // Aula 06: o total é recalculado sempre que a tela atualiza (setState)
-  double calcularTotal() {
-    double total = widget.preco;
-    if (paraViagem) {
-      total = total + 1; // embalagem para viagem
+  // Aula 06: quantidade muda com os botões - e +
+  int quantidade = 1;
+
+  // Texto do açúcar para mostrar na sacola
+  String textoAcucar() {
+    if (!widget.bebida) {
+      return '';
     }
-    return total;
+    if (acucar == Acucar.comAcucar) {
+      return 'Com açúcar';
+    }
+    if (acucar == Acucar.adocante) {
+      return 'Com adoçante';
+    }
+    return 'Sem açúcar';
   }
 
-  // RECURSO EXTRA: busca o endereço no ViaCEP e preenche os campos
-  Future<void> buscarCep() async {
-    String cep = cepController.text;
-    var resposta = await http.get(Uri.parse('https://viacep.com.br/ws/$cep/json/'));
-    var endereco = jsonDecode(resposta.body);
+  // Coloca o item na sacola e volta para o cardápio
+  void adicionarNaSacola() {
+    sacola.add(ItemSacola(widget.nome, widget.preco, quantidade, textoAcucar(), observacaoController.text));
 
-    // se o CEP não existir, o ViaCEP devolve {"erro": true}
-    if (endereco['erro'] == null) {
-      setState(() {
-        ruaController.text = endereco['logradouro'];
-        bairroController.text = endereco['bairro'];
-        cidadeController.text = endereco['localidade'];
-      });
-    }
-  }
-
-  // Aula 09: salva o pedido no Firestore com add()
-  Future<void> salvarPedido() async {
-    // o texto de "onde" muda conforme a forma de receber
-    String onde;
-    if (recebimento == Recebimento.retirar) {
-      onde = 'Retirar no balcão às ${horarioController.text}';
-    } else {
-      onde = 'Entregar em ${ruaController.text}, ${bairroController.text} - ${cidadeController.text}';
-    }
-
-    await FirebaseFirestore.instance.collection('pedidos').add({
-      'cliente': clienteController.text,
-      'produto': widget.nome,
-      'acucar': acucar.name,
-      'paraViagem': paraViagem,
-      'total': calcularTotal(),
-      'recebimento': recebimento.name,
-      'onde': onde,
-      'data': DateTime.now(),
-    });
-    Navigator.of(context).pop(); // volta para o cardápio
+    // SnackBar: mensagem rápida na parte de baixo da tela
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${widget.nome} adicionado à sacola! 🛍️')),
+    );
+    Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Pedido: ${widget.nome}'),
+        title: Text('Escolha seu item'),
         centerTitle: true,
         backgroundColor: corCafe,
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Image.network(widget.url, width: double.infinity, height: 160, fit: BoxFit.cover),
-
-            // Aula 07: TextField do nome
-            TextField(
-              controller: clienteController,
-              decoration: InputDecoration(label: Text('Seu nome')),
-            ),
-
-            // Aula 08: Radio para escolher retirar ou entregar
-            SizedBox(height: 16),
-            Text('Como quer receber?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            RadioGroup<Recebimento>(
-              groupValue: recebimento,
-              onChanged: (valor) {
-                setState(() {
-                  recebimento = valor!;
-                });
-              },
-              child: Column(
-                children: [
-                  RadioListTile(
-                    value: Recebimento.retirar,
-                    title: Text('Peça e retire'),
-                    subtitle: Text('Peça durante a aula e busque no balcão'),
-                  ),
-                  RadioListTile(
-                    value: Recebimento.entregar,
-                    title: Text('Delivery'),
-                    subtitle: Text('Receba no endereço informado'),
-                  ),
-                ],
-              ),
-            ),
-
-            // Só aparece quando escolher "Peça e retire"
-            Visibility(
-              visible: recebimento == Recebimento.retirar,
-              child: TextField(
-                controller: horarioController,
-                decoration: InputDecoration(
-                  label: Text('Horário para retirar'),
-                  hintText: 'ex: 10:30 (no intervalo)',
-                  icon: Icon(Icons.access_time),
+            // Aula 04: Stack com Positioned (nome e preço em cima da foto)
+            Stack(
+              children: [
+                Image.network(widget.url, width: double.infinity, height: 220, fit: BoxFit.cover),
+                // faixa escura embaixo da foto para o texto aparecer bem
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Container(height: 90, color: Colors.black45),
                 ),
-              ),
+                Positioned(
+                  left: 16,
+                  bottom: 16,
+                  child: Text(
+                    widget.nome,
+                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                ),
+                Positioned(
+                  right: 16,
+                  bottom: 16,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(color: corAmarelo, borderRadius: BorderRadius.circular(20)),
+                    child: Text(
+                      'R\$ ${widget.preco.toStringAsFixed(2)}',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: corCafe),
+                    ),
+                  ),
+                ),
+              ],
             ),
 
-            // Só aparece quando escolher "Delivery"
-            Visibility(
-              visible: recebimento == Recebimento.entregar,
+            Padding(
+              padding: EdgeInsets.all(16),
               child: Column(
                 children: [
-                  TextField(
-                    controller: cepController,
-                    decoration: InputDecoration(label: Text('CEP'), hintText: 'Só números, ex: 01310100'),
-                    // quando o CEP tiver 8 números, busca no ViaCEP
-                    onChanged: (texto) {
-                      if (texto.length == 8) {
-                        buscarCep();
-                      }
-                    },
+                  // Aula 06: quantidade com setState
+                  secao(
+                    Icons.format_list_numbered,
+                    'Quantidade',
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton.filled(
+                          style: IconButton.styleFrom(backgroundColor: corMarromClaro, foregroundColor: corCafe),
+                          icon: Icon(Icons.remove),
+                          onPressed: () {
+                            // não deixa ficar menor que 1
+                            if (quantidade > 1) {
+                              setState(() {
+                                quantidade = quantidade - 1;
+                              });
+                            }
+                          },
+                        ),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 24),
+                          child: Text('$quantidade', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                        ),
+                        IconButton.filled(
+                          style: IconButton.styleFrom(backgroundColor: corAmarelo, foregroundColor: corCafe),
+                          icon: Icon(Icons.add),
+                          onPressed: () {
+                            setState(() {
+                              quantidade = quantidade + 1;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                  TextField(
-                    controller: ruaController,
-                    decoration: InputDecoration(label: Text('Rua')),
+
+                  // Aula 08: grupo de Radio com enum (só para bebidas)
+                  Visibility(
+                    visible: widget.bebida,
+                    child: secao(
+                      Icons.local_cafe,
+                      'Açúcar',
+                      RadioGroup<Acucar>(
+                        groupValue: acucar,
+                        onChanged: (valor) {
+                          setState(() {
+                            acucar = valor!;
+                          });
+                        },
+                        child: Column(
+                          children: [
+                            RadioListTile(value: Acucar.comAcucar, title: Text('Com açúcar')),
+                            RadioListTile(value: Acucar.adocante, title: Text('Com adoçante')),
+                            RadioListTile(value: Acucar.semAcucar, title: Text('Sem açúcar')),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                  TextField(
-                    controller: bairroController,
-                    decoration: InputDecoration(label: Text('Bairro')),
-                  ),
-                  TextField(
-                    controller: cidadeController,
-                    decoration: InputDecoration(label: Text('Cidade')),
+
+                  // Aula 07: observação do item
+                  secao(
+                    Icons.edit_note,
+                    'Observação',
+                    TextField(
+                      controller: observacaoController,
+                      decoration: InputDecoration(
+                        hintText: widget.bebida ? 'ex: bem quente, sem canela' : 'ex: sem cebola, bem passado',
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
+          ],
+        ),
+      ),
 
-            // Aula 08: grupo de Radio com enum
-            SizedBox(height: 16),
-            Text('Açúcar (para bebidas)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            RadioGroup<Acucar>(
-              groupValue: acucar,
-              onChanged: (valor) {
-                setState(() {
-                  acucar = valor!;
-                });
-              },
-              child: Column(
-                children: [
-                  RadioListTile(value: Acucar.comAcucar, title: Text('Com açúcar')),
-                  RadioListTile(value: Acucar.adocante, title: Text('Com adoçante')),
-                  RadioListTile(value: Acucar.semAcucar, title: Text('Sem açúcar')),
-                ],
-              ),
+      // Barra fixa embaixo: subtotal + botão
+      bottomNavigationBar: Container(
+        padding: EdgeInsets.fromLTRB(20, 14, 20, 20),
+        decoration: BoxDecoration(
+          color: corCafe,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        // Aula 04: Row com alinhamento (valor na esquerda, botão na direita)
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Subtotal', style: TextStyle(color: corMarromClaro)),
+                // Aula 06: valor muda na tela com o setState
+                Text(
+                  'R\$ ${(widget.preco * quantidade).toStringAsFixed(2)}',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+              ],
             ),
-
-            // Aula 08: Checkbox
-            CheckboxListTile(
-              title: Text('Para viagem (+R\$ 1)'),
-              value: paraViagem,
-              onChanged: (valor) {
-                setState(() {
-                  paraViagem = valor!;
-                });
-              },
-            ),
-
-            // Aula 06: total muda na tela com o setState
-            Text(
-              'Total: R\$ ${calcularTotal().toStringAsFixed(2)}',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: corCafe),
-            ),
-            SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: salvarPedido,
-              child: Text('Fazer pedido'),
+            ElevatedButton.icon(
+              onPressed: adicionarNaSacola,
+              icon: Icon(Icons.shopping_bag),
+              label: Text('Adicionar à sacola', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
